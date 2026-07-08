@@ -1,0 +1,13 @@
+//SOSL querry
+
+
+public class ContactAndLeadSearch {
+    public static List<List<sObject>> searchContactsAndLeads(String searchString){
+        List<List<sObject>> searchResults = [FIND :searchString IN NAME FIELDS RETURNING Contact(FirstName, LastName),Lead(FirstName, LastName)];
+        return searchResults;
+    }
+}
+
+
+
+
