@@ -1,0 +1,67 @@
+//understand execution context--------bank account
+
+
+//ACCOUNT HANDLER
+
+public with sharing class AccountHandler {
+    public static void CreateNewOpportunity(List<Account> accts) {
+        List<Opportunity> opps = new List<Opportunity>();
+        for(Account acct : accts) {
+            Opportunity opp = new Opportunity();
+            opp.Name = acct.Name + ' Opportunity';
+            opp.AccountId = acct.Id;
+            opp.StageName = 'Prospecting';
+            opp.CloseDate = System.Today().addMonths(1);
+            opps.add(opp);
+        }
+        if(opps.size() > 0) {
+            insert opps;
+        }
+    }
+}
+
+//ACCOUNT TRIGGER
+
+trigger AccountTrigger on Account(before insert, before update, before
+    delete, after insert, after update, after delete,  after undelete) {
+    if(Trigger.isAfter && Trigger.isInsert) {
+        AccountHandler.CreateNewOpportunity(Trigger.New);
+    }
+}
+
+
+//APEX CODE
+
+Account acct = new Account(
+    Name='Test Account 2',
+    Phone='(415)555-8989',
+    NumberOfEmployees=50,
+    BillingCity='San Francisco');
+insert acct;
+
+
+
+//ACCOUNT TRIGGER TEST CODE
+
+@isTest
+private class AccountTrigger_Test {
+    @isTest static void TestCreateNewAccountInBulk() {
+        // Test Setup data
+        // Create 200 new Accounts
+        List<Account> accts = new List<Account>();
+        for(Integer i=0; i < 200; i++) {
+            Account acct = new Account(Name='Test Account ' + i);
+            accts.add(acct);
+        }
+        // Perform Test
+        Test.startTest();
+            insert accts;
+        Test.stopTest();
+        // Verify that 200 new Accounts were inserted
+        List<Account> verifyAccts = [SELECT Id FROM Account];
+        Assert.areEqual(200, verifyAccts.size());
+        // Also verify that 200 new Opportunities were inserted
+        List<Opportunity> verifyOpps = [SELECT Id FROM Opportunity];
+        Assert.areEqual(200, verifyOpps.size());
+    }
+}
